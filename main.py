@@ -6,6 +6,8 @@ from models import Base, User,Resume,Analysis
 from schemas import UserCreate, UserLogin, ResumeCreate
 from utils import hash_password, verify_password
 from ai_utils import extract_skills,analyze_resume_score
+from fastapi import UploadFile, File
+from pypdf import PdfReader
 
 from auth import create_access_token,verify_token,get_current_user_id
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -207,3 +209,37 @@ def get_my_analyses(
     )
 
     return analyses
+
+@app.post("/upload-pdf")
+def upload_pdf(
+    file: UploadFile = File(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+
+    token = credentials.credentials
+    user_id = get_current_user_id(token)
+
+    pdf = PdfReader(file.file)
+
+    text = ""
+
+    for page in pdf.pages:
+        extracted = page.extract_text()
+
+        if extracted:
+            text += extracted + "\n"
+
+    new_resume = Resume(
+        filename=file.filename,
+        resume_text=text,
+        user_id=user_id
+    )
+
+    db.add(new_resume)
+    db.commit()
+
+    return {
+        "message": "PDF uploaded successfully",
+        "filename": file.filename
+    }
