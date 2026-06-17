@@ -1,0 +1,48 @@
+# AI Resume Analyzer
+
+A backend application built with FastAPI and PostgreSQL that allows users to:
+
+* Register and log in securely
+* Authenticate using JWT tokens
+* Upload resumes
+* Analyze resumes for technical skills
+* Store analysis results
+* View resume and analysis history
+
+## Tech Stack
+
+* Python
+* FastAPI
+* PostgreSQL
+* SQLAlchemy
+* JWT Authentication
+* Passlib (bcrypt)
+
+## Features
+
+* User Registration
+* User Login
+* Protected Routes
+* Resume Upload
+* Resume Analysis
+* Analysis History
+
+## Run Locally
+
+pip install -r requirements.txt
+
+uvicorn main:app --reload
+
+## API Endpoints
+
+POST /users
+
+POST /login
+
+POST /upload-resume
+
+POST /analyze-resume/{resume_id}
+
+GET /my-resumes
+
+GET /my-analyses
