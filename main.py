@@ -238,8 +238,19 @@ def upload_pdf(
 
     db.add(new_resume)
     db.commit()
+    result = analyze_resume_score(text)
+
+    analysis = Analysis(
+    skills_found=", ".join(result["skills_found"]),
+    resume_id=new_resume.id
+)
+
+    db.add(analysis)
+    db.commit()
 
     return {
-        "message": "PDF uploaded successfully",
-        "filename": file.filename
-    }
+    "message": "PDF uploaded and analyzed",
+    "score": result["score"],
+    "skills_found": result["skills_found"],
+    "missing_skills": result["missing_skills"]
+}
