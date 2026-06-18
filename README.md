@@ -153,6 +153,8 @@ http://127.0.0.1:8000/docs
 * Docker Deployment
 
 ---
+## live demo
+https://ai-resume-analyzer-3pns.onrender.com/docs
 
 ## Author
 
