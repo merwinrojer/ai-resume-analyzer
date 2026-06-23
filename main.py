@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from redis_cache import get_cached_analysis, set_cached_analysis
 
 from database import engine, get_db
 from models import Base, User,Resume,Analysis
@@ -114,9 +115,7 @@ def analyze_resume(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
-
     token = credentials.credentials
-
     user_id = get_current_user_id(token)
 
     resume = db.query(Resume).filter(
@@ -126,24 +125,35 @@ def analyze_resume(
 
     if not resume:
         return {"message": "Resume not found"}
+
+    cached_result = get_cached_analysis(resume_id)
+
+    if cached_result:
+        cached_result["source"] = "redis_cache"
+        return cached_result
+
     result = analyze_resume_score(resume.resume_text)
+
     analysis = Analysis(
-    skills_found=", ".join(result["skills_found"]),
-    resume_id=resume.id
-)
+        skills_found=", ".join(result["skills_found"]),
+        resume_id=resume.id
+    )
 
     db.add(analysis)
     db.commit()
 
-    skills = extract_skills(resume.resume_text)
+    response_data = {
+        "resume_id": resume_id,
+        "filename": resume.filename,
+        "score": result["score"],
+        "skills_found": result["skills_found"],
+        "missing_skills": result["missing_skills"],
+        "source": "fresh_analysis"
+    }
 
-    return {
-    "resume_id": resume_id,
-    "filename": resume.filename,
-    "score": result["score"],
-    "skills_found": result["skills_found"],
-    "missing_skills": result["missing_skills"]
-}
+    set_cached_analysis(resume_id, response_data)
+
+    return response_data
 
 # @app.post("/classify-resume/{resume_id}")
 # def classify_resume_endpoint(
